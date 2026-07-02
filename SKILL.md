@@ -21,11 +21,20 @@ priority, and read stats-based recommendations. Everything is driven by the user
 criteria — **this skill hard-codes no personal data.**
 
 Pipeline: **① intake (interactive)** → **② write `_config.json`** → **③ parallel research
-(Workflow)** → **④ build data** → **⑤ launch marimo**.
+or equivalent web-researched `_wf_result.json`** → **④ build data** → **⑤ launch marimo**.
 
 Assets (in `assets/`): `dashboard_template.py` (the marimo app — all features),
 `research_workflow.js` (parallel research), `build_data.py`, `launch.py`.
 Reference: `reference/intake.md`, `reference/schema.md`, `reference/honesty.md`.
+
+Runtime compatibility:
+
+- In **Claude Code**, use structured question tools when available and run
+  `assets/research_workflow.js` with the Workflow tool.
+- In **Codex**, use `request_user_input` only when that tool is available; otherwise ask concise
+  plain-language questions. If no Workflow tool exists, perform the same research with web search
+  and/or subagents, then save the final object directly as `<out>/_wf_result.json` using the schema
+  in `reference/schema.md`. Continue with the same build and launch steps.
 
 ---
 
@@ -37,9 +46,9 @@ All generated files land there: `_config.json`, `_research_data.json`, `_rows.js
 
 ## Step 1 — Interactive intake (REQUIRED, do this first)
 
-Before any research, **have a short conversation to learn what the user cares about.** Use
-the `AskUserQuestion` tool for the structured choices and plain follow-up questions for the
-open ones. Collect (see `reference/intake.md` for the full question bank + option sets):
+Before any research, **have a short conversation to learn what the user cares about.** Use a
+structured question tool when the host provides one; otherwise ask concise plain follow-up
+questions. Collect (see `reference/intake.md` for the full question bank + option sets):
 
 1. **Research field / subfields** (free text) — the discipline and the specific topics/methods they want.
 2. **Regions / countries** — where they'll apply (and any "partial" regions). Capture a short label + color per region.
@@ -50,8 +59,8 @@ open ones. Collect (see `reference/intake.md` for the full question bank + optio
 7. **Application constraints they care about** — e.g. can-apply-to-multiple-programs hedging, deadlines.
 8. **Lifestyle / other** — city-size preference, international-student concerns, academia-vs-industry outcome interest.
 
-Keep it to ~3–5 `AskUserQuestion` rounds; don't over-interrogate. Confirm the summary back
-to the user before researching.
+Keep it to ~3–5 short question rounds; don't over-interrogate. Confirm the summary back to the
+user before researching.
 
 ## Step 2 — Write `_config.json`
 
@@ -82,10 +91,10 @@ From the intake answers, write `<out>/_config.json`. Fields the dashboard reads:
 - **`col_index`** — optional cost-of-living index by lowercase city substring (avg=100); enables
   the "real purchasing power" chart. Seed major target cities or omit.
 
-## Step 3 — Parallel research (Workflow)
+## Step 3 — Parallel research
 
-Run `assets/research_workflow.js` via the **Workflow** tool, passing the intake config as
-`args`. It runs fully in parallel: per-region program discovery → per-program
+Preferred Claude Code path: run `assets/research_workflow.js` via the **Workflow** tool, passing
+the intake config as `args`. It runs fully in parallel: per-region program discovery → per-program
 (facts ‖ PIs ‖ outcomes) → adversarial stipend/restriction verification.
 
 ```
@@ -101,6 +110,31 @@ Workflow({
   (`[{school, program, region, city}]`); otherwise discovery fills the list.
 - When it completes, **save the workflow's `result` object to `<out>/_wf_result.json`.**
 - Follow `reference/honesty.md`: never fabricate stipends/PIs; keep "not found" honest.
+
+Codex or no-Workflow path: run the same phases manually with web search and/or subagents. Use the
+prompts and JSON schemas inside `assets/research_workflow.js` as the contract, then write:
+
+```json
+{
+  "field": "<field>",
+  "regions": [{"key": "US", "label": "United States"}],
+  "floor": 35000,
+  "currency": "USD",
+  "programs": [
+    {
+      "region": "US",
+      "school": "...",
+      "program": "...",
+      "city": "...",
+      "facts": {},
+      "pis": {"pis": []},
+      "out": {}
+    }
+  ]
+}
+```
+
+Save that object as `<out>/_wf_result.json`; `assets/build_data.py` accepts the same shape.
 
 ## Step 4 — Build the dashboard data
 

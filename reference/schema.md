@@ -1,5 +1,34 @@
 # Data schema (what the dashboard reads)
 
+The research step first writes `_wf_result.json`; `assets/build_data.py` converts it into the
+files the marimo app reads.
+
+## `_wf_result.json` — research workflow output
+```json
+{
+  "field": "Computational biology",
+  "regions": [{"key": "US", "label": "United States"}],
+  "floor": 35000,
+  "currency": "USD",
+  "programs": [
+    {
+      "region": "US",
+      "school": "Example University",
+      "program": "Example PhD Program",
+      "city": "Example City",
+      "facts": { "...": "FACTS fields below" },
+      "pis": { "pis": [{ "...": "PI fields below" }] },
+      "out": { "...": "OUTCOMES fields below" }
+    }
+  ]
+}
+```
+
+Codex or other hosts without a Workflow tool may write this file directly after equivalent
+web research. Claude Code may produce the same object by running `assets/research_workflow.js`.
+
+## Dashboard input files
+
 The marimo app (`dashboard_template.py`) reads three files from its own folder.
 
 ## `_research_data.json` — grouped by school

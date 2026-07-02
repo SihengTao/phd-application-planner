@@ -1,0 +1,4 @@
+interface:
+  display_name: "PhD Application Planner"
+  short_description: "Plan PhD programs and advisor shortlists"
+  default_prompt: "Use $phd-application-planner to research PhD programs and build an interactive marimo application-planning dashboard."
