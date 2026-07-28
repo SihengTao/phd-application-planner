@@ -1,4 +1,4 @@
 interface:
   display_name: "PhD Application Planner"
-  short_description: "Plan PhD programs and advisor shortlists"
-  default_prompt: "Use $phd-application-planner to research PhD programs and build an interactive marimo application-planning dashboard."
+  short_description: "Build evidence-aware PhD plans and exports"
+  default_prompt: "Use $phd-application-planner. Start with the required progressive intake (or ask a returning user only what changed), confirm the config before research, check claim-level sources independently, then build the marimo dashboard and offer a privacy-safe Excel export."

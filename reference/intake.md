@@ -1,48 +1,143 @@
-# Intake question bank
+# Progressive intake
 
-Run this as a short conversation (about 3–5 structured or plain-language question rounds plus a
-couple of open follow-ups). Adapt wording to the user's field. Goal: fill the
-`args`/`_config.json` fields. Do **not** ask for or store the user's name or identity.
+Intake is a required gate for both Claude Code and Codex. Do not start program discovery,
+research, checking, building, or launch until the user has confirmed a complete config and
+`_config.json.intake_complete` is `true`.
 
-## A. Field & topics (open)
-- "What field is your PhD in, and which specific subfields / methods / systems do you care about most?"
-- Capture → `field`, `subfields`. Use these to also generate `interest_areas` buckets.
+Do not ask for or store the user's name or identity. Ask only questions that can materially
+change the shortlist, evidence search, ranking, or export.
 
-## B. Regions (structured multi-select if available) → `regions`
-- "Where do you want to apply?" Options e.g.: United States · Europe (broadly) · United Kingdom ·
-  Canada · Hong Kong / Singapore · China · Australia · Other.
-- For each chosen region set `{key, label, short, color, order}`. Assign distinct colors
-  (palette: #0F4D92 #42949E #B64342 #8B5CF6 #E2A52C #3775BA). Ask if any region is "partial"
-  (only if funded / only certain programs).
+## First-time user: 5–8 adaptive rounds
 
-## C. Funding (structured choices or open) → `stipend_floor`, `currency`
-- "What's your minimum acceptable annual stipend, and in what currency?" This is a hard filter.
-- Common presets: $35,000 · $30,000 · $40,000 · no minimum.
+Use one focused question or a small coherent group per round. Reflect the answer briefly, explain
+what it changes when useful, and then ask the next most informative question. Do not dump the
+whole questionnaire at once.
 
-## D. Scope (structured choices or open) → `n_programs`, `n_pis_per_program`
-- "How many programs should I research?" (e.g. ~10 / ~20 / ~30)
-- "How many fitting PIs per program?" (e.g. 6 / 10 / 12)
+1. **Goal and field.** What discipline, subfields, questions, populations/periods/regions, and
+   methods define fit? Capture `field`, `subfields`, and a field-specific `interest_areas`
+   taxonomy.
 
-## E. PI preferences (structured multi-select if available) → `pi_preferences`, `rising_star_bias`
-- "What kind of advisors do you want?" Options e.g.:
-  - Rising stars (junior, lab started ~recently, actively recruiting)
-  - Small / young labs over big established ones
-  - Strong direction-fit / mid-career specialists
-  - Novel-method / interesting labs
-  - Compute-first / dry vs wet-lab balance (ask which)
-  - Mechanism-oriented vs descriptive/association
-- "How strongly should I favor rising stars over famous names?" → `rising_star_bias`: strong / moderate / neutral.
+2. **Advising model.** Determine `discipline_mode`:
 
-## F. Application constraints (open) → `notes`
-- "Any application mechanics you care about? e.g. can you apply to multiple programs at one
-  school (hedging), deadlines, GRE, fee waivers?"
+   - `lab_based`: PI/lab-centered;
+   - `faculty_based`: advisor/committee-centered humanities or social science;
+   - `hybrid`: both matter.
 
-## G. Lifestyle / other (open) → `notes`
-- City size preference; international-student funding/visa concerns; academia-vs-industry
-  outcome interest; anything else that defines 'fit'.
+   Let the user correct the mode. Do not infer that all STEM is lab-based or all social science
+   is faculty-based.
 
-## Wrap-up
-Summarize the collected criteria back to the user in 4–6 bullets and confirm before launching
-the research workflow or Codex-equivalent web research. Write everything into `_config.json`
-(branding, regions, floor, interest_areas, col_index) and pass the research params as Workflow
-`args` when Workflow is available.
+3. **Geography and scope.** Ask for target regions/countries, exclusions, any "partial" region,
+   seed programs, approximate program count, and desired advisors per program. For each region,
+   prepare `{key,label,short,color,order}`.
+
+4. **Funding and application constraints.** Ask for the annual floor and currency, whether zero
+   means no hard minimum, and which mechanics matter: deadlines, tests, fee waivers, international
+   eligibility, and whether multiple programs at one institution may be applied to.
+
+5. **Advisor/faculty fit.** Adapt to the mode:
+
+   - lab-based: topics, methods, recruitment, rising vs established, lab size, and wet/dry mix;
+   - faculty-based: primary advisor eligibility, committee breadth, intellectual tradition,
+     periods/regions, archives/languages, qualitative/quantitative methods, and selected work;
+   - hybrid: ask only the relevant parts of both.
+
+6. **Discipline-specific requirements and outcomes.** For humanities/social sciences, explicitly
+   ask about writing-sample fit, language requirements, methods training, field requirements,
+   teaching load, advisor assignment/contact expectations, time to degree, and academic/
+   non-academic placement. For lab-based fields, ask the corresponding training, rotation,
+   placement, and career-outcome priorities.
+
+7. **Campus life and nearby food.** Ask whether to research Chinese food near the relevant
+   campus/department anchor. Default cuisine priorities are Sichuan, Cantonese, and Hunan
+   (🌶️🌶️🌶️); capture max distance/travel time, travel modes, budget, spice, dietary needs, and
+   whether the user wants other Chinese cuisines included. Explain that taste/authenticity and
+   current opening status have evidence limits. This is an explicit opt-in: if the user does not
+   request it, store `food_preferences.enabled: false`; a missing food config also defaults to
+   disabled.
+
+8. **Ranking, privacy, and delivery.** Ask about city/lifestyle, relative ranking weights,
+   dashboard language, Excel need, and whether private notes must remain dashboard-only. Excel
+   notes are excluded by default and require an explicit opt-in.
+
+Five rounds is the minimum: combine low-impact topics when answers are already clear. Use up to
+eight when the discipline, advising model, constraints, or food/export preferences need
+separation. Skip redundant questions; never silently substitute defaults for a decision that
+would materially change the result.
+
+## Returning user: delta intake only
+
+If `_config.json` exists:
+
+1. Read it and summarize the current field/mode, regions, funding floor, scope, advisor criteria,
+   food preferences, ranking priorities, and export privacy in a compact review.
+2. Ask **what changed since the prior run**. Do not repeat unchanged questions.
+3. Ask a targeted follow-up only for a changed value, a missing required field, a detected
+   inconsistency, or a time-sensitive cycle update.
+4. Preserve all unchanged values and stable IDs. Set `intake_complete: false` while editing.
+5. Show the delta and the resulting config, obtain confirmation, then set
+   `intake_complete: true`.
+
+If a legacy config lacks v2 fields, ask only the minimum migration questions (usually
+`discipline_mode`, current cycle, food opt-in, and export privacy), rather than restarting the
+full first-time interview.
+
+## Required completion checklist
+
+Before confirmation, ensure the config states:
+
+- `schema_version`, `intake_version`, and `intake_complete`;
+- field, subfields, `discipline_mode`, and discipline-specific interest areas;
+- regions, seed programs, program/advisor scope;
+- stipend floor/currency and application constraints;
+- advisor/faculty and outcome priorities;
+- nearby-food opt-in and campus/distance preferences;
+- ranking/lifestyle preferences and export privacy.
+
+Summarize the criteria in 6–10 concise bullets. Clearly label assumptions and unresolved choices.
+Only after the user confirms may the runtime write `intake_complete: true` and begin research.
+
+## Config-oriented example
+
+```json
+{
+  "schema_version": "2.0",
+  "intake_version": 2,
+  "intake_complete": true,
+  "field": "Sociology",
+  "subfields": ["political sociology", "organizations"],
+  "discipline_mode": "faculty_based",
+  "advisor_label": "faculty/advisor",
+  "application_cycle": "2027 admission",
+  "regions": [
+    {
+      "key": "US",
+      "label": "United States",
+      "short": "US",
+      "color": "#0F4D92",
+      "order": 0
+    }
+  ],
+  "stipend_floor": 35000,
+  "currency": "USD",
+  "n_programs": 20,
+  "n_pis_per_program": 8,
+  "seed_programs": [],
+  "interest_areas": {
+    "Organizations": ["organization", "institution"],
+    "Methods": ["ethnograph", "causal inference"]
+  },
+  "food_preferences": {
+    "enabled": true,
+    "priority_cuisines": ["Sichuan", "Cantonese", "Hunan"],
+    "max_distance": "30 minutes",
+    "travel_modes": ["walk", "transit"],
+    "budget": "any",
+    "spice": "very spicy",
+    "dietary_needs": []
+  },
+  "export": {
+    "excel": true,
+    "include_private_notes": false
+  }
+}
+```

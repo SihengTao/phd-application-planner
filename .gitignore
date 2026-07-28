@@ -9,7 +9,9 @@ _config.json
 _research_data.json
 _rows.json
 _wf_result.json
+_quality_report.json
 _pi_notes.json
 _pi_hidden.json
 phd_explorer.py
 out.html
+*.xlsx
