@@ -1,4 +1,4 @@
 interface:
   display_name: "PhD Application Planner"
   short_description: "Build evidence-aware PhD plans and exports"
-  default_prompt: "Use $phd-application-planner. Start with the required progressive intake (or ask a returning user only what changed), confirm the config before research, check claim-level sources independently, then build the marimo dashboard and offer a privacy-safe Excel export."
+  default_prompt: "Use $phd-application-planner. Start with the required progressive intake (or ask a returning user only what changed), confirm the config before research, check claim-level sources independently, then build the marimo dashboard and deliver the chosen result: a concise application tracker (Excel or Google Docs) and/or the full evidence workbook, privacy-safe."

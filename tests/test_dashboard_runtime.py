@@ -177,6 +177,7 @@ class DashboardRuntimeTests(unittest.TestCase):
             self.assertTrue(exporter.is_file())
             copied_exporter = run_dir / exporter.name
             shutil.copy2(exporter, copied_exporter)
+            shutil.copy2(ROOT / "assets" / "summary_export.py", run_dir / "summary_export.py")
             (run_dir / "_research_data.json").write_text(
                 json.dumps({"Example University": [record]}),
                 encoding="utf-8",

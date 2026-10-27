@@ -133,11 +133,16 @@ alias of `out`; new writers should retain the canonical `pis`, `out`, and `nearb
 
 Common fields:
 
-`city, campusAnchor, disciplineMode, stipendUSD (number|null), stipendLocal,
+`city, campusAnchor, disciplineMode, degreeType, applicationDeadline (YYYY-MM-DD|null),
+programUrl, applicationPortalUrl, stipendUSD (number|null), stipendLocal,
 stipendCurrency, stipend_basis, stipend_confidence (high|medium|low|unknown|conflict),
 stipend_foundOfficial (bool|null), stipendNotes, meetsFloor (bool|null), cohortSize,
 degreeStructure, applicationRoute, deadlineAndTests, applicationRestrictions,
 applicationPolicy, researchFocus, fitScore (number 0-10), fitRationale, siblingPrograms`
+
+`degreeType`, `applicationDeadline`, `programUrl`, and `applicationPortalUrl` feed the concise
+tracker ([outputs.md](outputs.md)); use `null` when an official page does not state them. Keep the
+full deadline/test wording in `deadlineAndTests`.
 
 `applicationPolicy` is exactly one of:
 

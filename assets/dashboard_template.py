@@ -1802,8 +1802,8 @@ def _(CURRENCY, cl_df, cl_prof, mo, plt):
 def _(mo, section):
     mo.Html(section(
         "Export",
-        "⬇️ 导出 Excel",
-        "一键导出项目、导师、优先级、餐馆、来源与质量检查。默认不含私人导师备注；选择当前筛选结果时会保留页面上的筛选范围。",
+        "⬇️ 导出结果",
+        "两种结果：<b>完整版</b> Excel 保留项目、导师、优先级、餐馆、来源与质量检查；<b>简洁版</b>只保留申请追踪表（项目总览 / 申请状态 / 导师联系），可导出为 Excel 或 Google Docs。默认不含私人导师备注；选择当前筛选结果时会保留页面上的筛选范围。",
         "export",
     ))
     return
@@ -1820,8 +1820,88 @@ def _(mo):
         value=False,
         label="包含本地私人导师备注（请谨慎分享）",
     )
-    mo.hstack([export_scope, export_notes], justify="start", gap=2)
-    return export_notes, export_scope
+    export_mode = mo.ui.radio(
+        options={"简洁版（申请追踪表）": "concise", "完整版（全部证据）": "full"},
+        value="简洁版（申请追踪表）",
+        label="结果版本",
+        inline=True,
+    )
+    mo.vstack([export_mode, mo.hstack([export_scope, export_notes], justify="start", gap=2)], gap=0.6)
+    return export_mode, export_notes, export_scope
+
+
+@app.cell
+def _(
+    BASE,
+    cfg,
+    datetime,
+    export_mode,
+    export_notes,
+    export_scope,
+    get_hidden,
+    load_notes,
+    mo,
+    prog_filtered,
+    research,
+    timezone,
+):
+    # 简洁版：与完整版共用范围/备注选项；看板里隐藏的项目和导师不会导出。
+    mo.stop(export_mode.value != "concise")
+    _helper = BASE / "summary_export.py"
+    if not _helper.exists():
+        _helper = BASE.parent / "assets" / "summary_export.py"
+    _summary = None
+    _summary_error = ""
+    try:
+        import importlib.util as _importlib_util
+
+        if not _helper.exists():
+            raise RuntimeError("找不到 summary_export.py；请用更新后的 launch.py 启动，或把 assets/summary_export.py 复制到 dashboard 旁边")
+        _spec = _importlib_util.spec_from_file_location("phd_planner_summary_export", _helper)
+        _module = _importlib_util.module_from_spec(_spec)
+        _spec.loader.exec_module(_module)
+        if getattr(_module, "SUMMARY_API_VERSION", None) != 1:
+            raise RuntimeError("简洁版导出器版本不兼容；请重新复制 assets/summary_export.py")
+        _summary = _module
+    except Exception as _exc:
+        _summary_error = f"简洁版导出器无法加载：{_exc}"
+
+    _tables = {"programs": [], "advisors": []}
+    if _summary is not None:
+        _ids = prog_filtered.program_id.tolist() if export_scope.value == "filtered" else None
+        _tables = _summary.summary_tables(
+            research,
+            region_order=cfg.get("region_order"),
+            program_ids=_ids,
+            hidden=get_hidden(),
+            notes=load_notes() if export_notes.value else None,
+        )
+    _stamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M")
+    _xlsx = mo.download(
+        data=(lambda: _summary.build_summary_xlsx(_tables)) if _summary else b"",
+        filename=f"phd_application_tracker_{_stamp}.xlsx",
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        disabled=_summary is None,
+        label="📗 简洁版 Excel（也可用 Google Sheets 打开）",
+    )
+    _gdoc = mo.download(
+        data=(lambda: _summary.build_summary_html(_tables).encode("utf-8")) if _summary else b"",
+        filename=f"phd_application_tracker_{_stamp}.html",
+        mimetype="text/html",
+        disabled=_summary is None,
+        label="📄 简洁版 Google Docs",
+    )
+    _hint = mo.callout(
+        mo.md(
+            f"简洁版含 **{len(_tables['programs'])}** 个项目、**{len(_tables['advisors'])}** 位{cfg.get('advisor_label') or '导师'}。"
+            "Google Docs：把 `.html` 上传到 Google Drive → 右键「打开方式 → Google 文档」。"
+            "Deadline 带 (TBC) 表示未经独立核实；Match Level 由契合度分数换算（≥7.5 High，≥5 Medium）。"
+        ),
+        kind="info",
+    )
+    _error_view = mo.callout(mo.md(_summary_error), kind="danger") if _summary_error else None
+    mo.vstack([mo.hstack([_xlsx, _gdoc], justify="start", gap=1), _hint] + ([_error_view] if _error_view else []), gap=0.6)
+    return
 
 
 @app.cell
@@ -1844,6 +1924,7 @@ def _(
     restaurants_df,
     sources_df,
     timezone,
+    export_mode,
 ):
     _filtered = export_scope.value == "filtered"
     _program_export = (prog_filtered if _filtered else programs_df).copy()
@@ -1900,6 +1981,8 @@ def _(
                 )
         except Exception as _exc:
             _export_error = f"Excel exporter 无法加载：{_exc}"
+    # A broken full exporter is reported in either mode; otherwise this cell is full-mode only.
+    mo.stop(export_mode.value != "full" and not _export_error)
 
     def _make_workbook():
         if _excel_module is None:

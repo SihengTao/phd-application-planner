@@ -90,14 +90,15 @@ def main(argv=None) -> int:
         return 1
     # The dashboard imports the Excel exporter lazily. Keep the generated app
     # self-contained even when users followed an older copy-only command.
-    helper_src = Path(__file__).resolve().parent / "excel_export.py"
-    helper_dst = Path(app).parent / "excel_export.py"
-    if helper_src.exists() and helper_src != helper_dst:
-        try:
-            shutil.copy2(helper_src, helper_dst)
-        except OSError as exc:
-            print(f"error: could not copy Excel exporter to {helper_dst}: {exc}", file=sys.stderr)
-            return 1
+    for helper in ("excel_export.py", "summary_export.py"):
+        helper_src = Path(__file__).resolve().parent / helper
+        helper_dst = Path(app).parent / helper
+        if helper_src.exists() and helper_src != helper_dst:
+            try:
+                shutil.copy2(helper_src, helper_dst)
+            except OSError as exc:
+                print(f"error: could not copy exporter to {helper_dst}: {exc}", file=sys.stderr)
+                return 1
     try:
         port = args.port if args.port is not None else free_port(2740)
     except RuntimeError as exc:

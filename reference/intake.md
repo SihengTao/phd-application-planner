@@ -56,8 +56,16 @@ whole questionnaire at once.
    disabled.
 
 8. **Ranking, privacy, and delivery.** Ask about city/lifestyle, relative ranking weights,
-   dashboard language, Excel need, and whether private notes must remain dashboard-only. Excel
-   notes are excluded by default and require an explicit opt-in.
+   dashboard language, and whether private notes must remain dashboard-only (notes are excluded
+   from every export by default and require an explicit opt-in). Then ask which **result** to
+   deliver (see [outputs.md](outputs.md)):
+
+   - `export.version`: `concise` — an application tracker (program overview, application
+     status, faculty outreach); `full` — the complete evidence workbook; or `both`;
+   - `export.destination`: `excel`, `google_sheets`, or `google_doc` (Google Docs applies to the
+     concise tracker only).
+
+   Default to `concise` + `excel` when the user has no preference.
 
 Five rounds is the minimum: combine low-impact topics when answers are already clear. Use up to
 eight when the discipline, advising model, constraints, or food/export preferences need
@@ -69,7 +77,8 @@ would materially change the result.
 If `_config.json` exists:
 
 1. Read it and summarize the current field/mode, regions, funding floor, scope, advisor criteria,
-   food preferences, ranking priorities, and export privacy in a compact review.
+   food preferences, ranking priorities, result version/destination, and export privacy in a
+   compact review.
 2. Ask **what changed since the prior run**. Do not repeat unchanged questions.
 3. Ask a targeted follow-up only for a changed value, a missing required field, a detected
    inconsistency, or a time-sensitive cycle update.
@@ -78,8 +87,9 @@ If `_config.json` exists:
    `intake_complete: true`.
 
 If a legacy config lacks v2 fields, ask only the minimum migration questions (usually
-`discipline_mode`, current cycle, food opt-in, and export privacy), rather than restarting the
-full first-time interview.
+`discipline_mode`, current cycle, food opt-in, result version/destination, and export
+privacy), rather than restarting the full first-time interview. A legacy `export.excel: true`
+means `version: "full"`, `destination: "excel"` until the user chooses otherwise.
 
 ## Required completion checklist
 
@@ -91,7 +101,7 @@ Before confirmation, ensure the config states:
 - stipend floor/currency and application constraints;
 - advisor/faculty and outcome priorities;
 - nearby-food opt-in and campus/distance preferences;
-- ranking/lifestyle preferences and export privacy.
+- ranking/lifestyle preferences, result version/destination, and export privacy.
 
 Summarize the criteria in 6–10 concise bullets. Clearly label assumptions and unresolved choices.
 Only after the user confirms may the runtime write `intake_complete: true` and begin research.
@@ -136,7 +146,8 @@ Only after the user confirms may the runtime write `intake_complete: true` and b
     "dietary_needs": []
   },
   "export": {
-    "excel": true,
+    "version": "concise",
+    "destination": "excel",
     "include_private_notes": false
   }
 }

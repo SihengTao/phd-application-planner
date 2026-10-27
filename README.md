@@ -1,8 +1,8 @@
 # PhD Application Planner
 
 An evidence-aware **Claude Code / Codex skill** that turns a progressive intake conversation
-into a researched **[marimo](https://marimo.io) dashboard** and optional Excel workbook for PhD
-application planning.
+into a researched **[marimo](https://marimo.io) dashboard** plus an application tracker (Excel or
+Google Docs) and/or a full evidence workbook for PhD application planning.
 
 It supports lab-based fields, humanities, social sciences, and hybrid programs. It compares
 programs and advisors, funding, application policies, discipline-specific requirements,
@@ -27,8 +27,10 @@ claim-level sources, an independent evidence pass, and a local data checker.
 - **Claim-level provenance and checking:** critical facts retain source-to-field links, cycle and
   access dates, retrieval status, independent check results, and unresolved conflicts. The
   dashboard never claims that everything is verified unconditionally.
-- **Excel export:** export all programs or the current filtered view from the dashboard or CLI.
-  Notes are opt-in, and cells are escaped against spreadsheet formula injection.
+- **Two result versions:** a **concise application tracker** (program overview, application
+  status, faculty outreach — Excel / Google Sheets / Google Docs) or the **full evidence
+  workbook**, for all programs or the current filtered view. Notes are opt-in, and cells are
+  escaped against spreadsheet formula injection.
 - **Stable identities:** `program_id` and `advisor_id` prevent same-named programs or faculty
   from mixing data, notes, hidden state, and exports.
 
@@ -168,12 +170,29 @@ that a page semantically supports a claim. `build_data.py` runs the same offline
 again, always writes `_quality_report.json`, blocks on errors, and accepts `--strict` and
 `--online` when the build itself should use those modes.
 
-### 4. Export Excel
+### 4. Deliver results
 
-Use the dashboard's **Excel** panel to export all programs or the current filtered view. Private
-advisor notes are off by default and require explicit opt-in.
+Choose the result version during intake (`export.version`) or in the dashboard's **Export**
+panel. Both export all programs or the current filtered view; private advisor notes are off by
+default and require explicit opt-in. See [`reference/outputs.md`](reference/outputs.md).
 
-For command-line export, use the exporter after building data:
+| Version | Contents | Formats |
+|---|---|---|
+| Concise (default) | Application overall · Application status · Reach out status | `.xlsx` (Excel / Google Sheets), `.html` → Google Docs |
+| Full | Programs · Advisors · Restaurants · Sources · Quality · Priority · Metadata | `.xlsx` |
+
+Concise tracker:
+
+```bash
+python3 assets/summary_export.py "$OUT" "$OUT/phd_application_tracker.xlsx"
+python3 assets/summary_export.py "$OUT" "$OUT/phd_application_tracker.html" --format gdoc
+```
+
+Deadlines are marked `(TBC)` unless independently confirmed; Match Level comes from the fit score
+(≥ 7.5 High, ≥ 5 Medium); programs and advisors hidden in the dashboard are skipped. For Google
+Docs, upload the `.html` to Google Drive and choose **Open with → Google Docs**.
+
+Full evidence workbook:
 
 ```bash
 python3 assets/excel_export.py "$OUT" "$OUT/phd_application_plan.xlsx"
@@ -230,13 +249,16 @@ phd-application-planner/
 │   ├── data_quality.py
 │   ├── build_data.py
 │   ├── dashboard_template.py
-│   ├── excel_export.py
+│   ├── excel_export.py       # full evidence workbook
+│   ├── summary_export.py     # concise tracker (xlsx / Google Docs)
 │   └── launch.py
 ├── reference/
 │   ├── intake.md
+│   ├── research.md
 │   ├── schema.md
 │   ├── source_policy.md
-│   └── honesty.md
+│   ├── honesty.md
+│   └── outputs.md
 ├── tests/
 ├── requirements.txt
 ├── README.md
@@ -253,6 +275,8 @@ Generated run files:
 ├── _research_data.json
 ├── _rows.json
 ├── phd_explorer.py
+├── phd_application_tracker.xlsx / .html   # concise result
+├── phd_application_plan.xlsx              # full result
 ├── _pi_notes.json       # private runtime state; not exported by default
 └── _pi_hidden.json
 ```
@@ -282,7 +306,8 @@ excluded unless explicitly requested.
 # 博士申请规划器
 
 这是一个同时适用于 **Claude Code / Codex 的、重视证据的 skill**。它会通过渐进式询问了解需求，
-然后生成经过调研的 **[marimo](https://marimo.io) 仪表盘**，也可以导出 Excel，用于规划博士申请。
+然后生成经过调研的 **[marimo](https://marimo.io) 仪表盘**，并输出简洁版申请追踪表（Excel 或
+Google Docs）和/或完整版证据工作簿，用于规划博士申请。
 
 它支持实验室型学科、人文学科、社会科学和混合型项目。除了项目、导师、funding 和申请规则，
 它还会比较学科特定要求、placement、国际学生信息，以及以校区为锚点的中餐馆；关键消息在内部
@@ -437,12 +462,29 @@ python3 assets/check_data.py "$OUT/_wf_result.json" \
 套离线质量门、始终写出 `_quality_report.json`，并在出现 error 时阻止构建；如果希望构建阶段
 本身使用严格或在线模式，也可以给它添加 `--strict` 和 `--online`。
 
-### 4. 导出 Excel
+### 4. 导出结果
 
-在仪表盘的 **Excel** 区域中，可以导出全部项目或当前筛选结果。导师私人笔记默认关闭，只有
-用户主动选择后才会加入。
+在 intake（`export.version`）或仪表盘的 **导出结果** 区域选择结果版本。两种版本都可以导出
+全部项目或当前筛选结果；导师私人笔记默认关闭，只有用户主动选择后才会加入。详见
+[`reference/outputs.md`](reference/outputs.md)。
 
-构建数据后也可以使用命令行导出器：
+| 版本 | 内容 | 格式 |
+|---|---|---|
+| 简洁版（默认） | 项目总览 · 申请状态 · 导师联系 | `.xlsx`（Excel / Google Sheets）、`.html` → Google Docs |
+| 完整版 | Programs · Advisors · Restaurants · Sources · Quality · Priority · Metadata | `.xlsx` |
+
+简洁版申请追踪表：
+
+```bash
+python3 assets/summary_export.py "$OUT" "$OUT/phd_application_tracker.xlsx"
+python3 assets/summary_export.py "$OUT" "$OUT/phd_application_tracker.html" --format gdoc
+```
+
+Deadline 未经独立核实时标注 `(TBC)`；Match Level 由契合度分数换算（≥ 7.5 High，≥ 5 Medium）；
+仪表盘中隐藏的项目和导师不会导出。Google Docs：把 `.html` 上传到 Google Drive，右键选择
+「打开方式 → Google 文档」。
+
+完整版证据工作簿：
 
 ```bash
 python3 assets/excel_export.py "$OUT" "$OUT/phd_application_plan.xlsx"
@@ -498,13 +540,16 @@ phd-application-planner/
 │   ├── data_quality.py
 │   ├── build_data.py
 │   ├── dashboard_template.py
-│   ├── excel_export.py
+│   ├── excel_export.py       # full evidence workbook
+│   ├── summary_export.py     # concise tracker (xlsx / Google Docs)
 │   └── launch.py
 ├── reference/
 │   ├── intake.md
+│   ├── research.md
 │   ├── schema.md
 │   ├── source_policy.md
-│   └── honesty.md
+│   ├── honesty.md
+│   └── outputs.md
 ├── tests/
 ├── requirements.txt
 ├── README.md
@@ -521,6 +566,8 @@ phd-application-planner/
 ├── _research_data.json
 ├── _rows.json
 ├── phd_explorer.py
+├── phd_application_tracker.xlsx / .html   # concise result
+├── phd_application_plan.xlsx              # full result
 ├── _pi_notes.json       # 私人运行状态；默认不导出
 └── _pi_hidden.json
 ```

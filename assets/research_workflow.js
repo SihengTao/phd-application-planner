@@ -270,6 +270,10 @@ const FACTS_SCHEMA = {
     advisorSelection: { type: 'string' },
     applicationRoute: { type: 'string' },
     deadlineAndTests: NULLABLE_STRING,
+    applicationDeadline: { ...NULLABLE_STRING, description: 'primary current-cycle deadline as YYYY-MM-DD; null if not published' },
+    degreeType: { ...NULLABLE_STRING, description: 'awarded degree, e.g. PhD, DPhil, EdD, MD-PhD' },
+    programUrl: { ...NULLABLE_STRING, description: 'official program home page' },
+    applicationPortalUrl: { ...NULLABLE_STRING, description: 'official application portal or how-to-apply page' },
     applicationPolicy: { type: 'string', enum: ['multiple_allowed', 'single_only', 'unknown', 'conflict'] },
     applicationRestrictions: { type: 'string' },
     researchFocus: { type: 'string' },
@@ -809,7 +813,9 @@ const results = await pipeline(
 at ${candidate.school} (${candidate.city || 'city not yet confirmed'}). Verify the relevant
 program/department campus anchor, funding amount and basis, cohort/degree structure,
 admissions/advisor-selection model, deadlines/tests, and whether the institution permits
-multiple applications in the same cycle. applicationPolicy MUST be exactly one of
+multiple applications in the same cycle. Also record the tracker fields degreeType,
+applicationDeadline (YYYY-MM-DD for the main current-cycle deadline), programUrl, and
+applicationPortalUrl from official pages, or null. applicationPolicy MUST be exactly one of
 multiple_allowed, single_only, unknown, conflict. Fill discipline-relevant fields: for
 faculty_based/hybrid modes specifically research writing samples, languages, theory/methods
 training, field/qualifying exams, dissertation form, archives/fieldwork support, and teaching.
